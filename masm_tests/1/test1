@@ -1,0 +1,19 @@
+.386
+.model flat, stdcall
+option casemap:none
+
+include windows.inc
+include user32.inc
+include kernel32.inc
+includelib user32.lib
+includelib kernel32.lib
+
+.data
+    message db "ПІБ: Іванова Дар'я ІВанівна", 0Ah, "Дата народження: 04.02.2005", 0Ah, "Залікова книжка: 56395639", 0
+    caption db "Персональні дані", 0
+
+.code
+start:
+    invoke MessageBox, NULL, addr message, addr caption, MB_OK
+    invoke ExitProcess, 0
+end start
