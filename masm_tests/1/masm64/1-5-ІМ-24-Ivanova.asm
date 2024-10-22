@@ -1,15 +1,15 @@
-extrn MessageBoxA: PROC  ; Використовуємо MessageBoxA для UTF-8
+extrn MessageBoxA: PROC  
 extrn ExitProcess: PROC
 extrn GetStdHandle: PROC
 extrn WriteFile: PROC
 
 .data
-    message db 'Full Name: Ivanova Daria Ivanivna', 13, 10,  ; Line break (CR LF)
-            'Date of Birth: 04.02.2005', 13, 10,               ; Line break (CR LF)
-            'Student ID: 125635', 13, 10,                      ; Line break (CR LF)
-            'Favorite Animal: Rat', 0                          ; Null terminator
-    caption db 'Personal Data', 0                              ; Window title
-    consoleMessage db 'Program started...', 0                  ; Diagnostic message
+    message db 'Full Name: Ivanova Daria Ivanivna', 13, 10,  
+            'Date of Birth: 04.02.2005', 13, 10,              
+            'Student ID: 125635', 13, 10,                     
+            'Favorite Animal: Rat', 0                         
+    caption db 'Personal Data', 0                           
+    consoleMessage db 'Program started...', 0               
     STD_OUTPUT_HANDLE equ -11
     bytesWritten dq 0
     messageLength dq ($ - consoleMessage)
