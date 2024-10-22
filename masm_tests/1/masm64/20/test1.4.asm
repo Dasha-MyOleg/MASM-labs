@@ -1,0 +1,21 @@
+.486
+.model flat, c
+option casemap:none
+
+include windows.inc
+include user32.inc
+include kernel32.inc
+includelib user32.lib
+includelib kernel32.lib
+
+.data
+    message db "ПІБ: Іванов Іван Іванович", 0Ah, "Дата народження: 01.01.2000", 0Ah, "Залікова книжка: 123456", 0
+    caption db "Персональні дані", 0
+
+.code
+main PROC
+    invoke MessageBoxW, NULL, addr message, addr caption, MB_OK
+    invoke ExitProcess, 0
+main ENDP
+
+end main
