@@ -31,8 +31,8 @@ includelib C:\masm32\lib\kernel32.lib
 
     D real4 0.001
     E real4 0.078
-    F_string db "781.555", 0       ; Store the number as a string
-    negF_string db "781.555", 0    ; Store the negative number as a string
+    F_string db "781.555", 0     
+    negF_string db "781.555", 0    
 
     D_int dd ?
     D_frac dd ?
@@ -40,22 +40,22 @@ includelib C:\masm32\lib\kernel32.lib
     E_frac dd ?
     F_int dd ?
     F_frac dd ?
-    negD dd -0.001                 ; Define negD
+    negD dd -0.001               
     negD_int dd ?
     negD_frac dd ?
-    negE dd -0.078                 ; Define negE
+    negE dd -0.078               
     negE_int dd ?
     negE_frac dd ?
     negF_int dd ?
     negF_frac dd ?
 
-    D_hex_int dd ?                 ; Define hex int for D
-    D_hex_frac dd ?                ; Define hex frac for D
-    E_hex_int dd ?                 ; Define hex int for E
-    E_hex_frac dd ?                ; Define hex frac for E
+    D_hex_int dd ?              
+    D_hex_frac dd ?             
+    E_hex_int dd ?               
+    E_hex_frac dd ?             
 
     buffer db 512 dup(0)
-    tenpow3 real4 1000.0          ; Declare tenpow3
+    tenpow3 real4 1000.0       
 
 .code
 start:
