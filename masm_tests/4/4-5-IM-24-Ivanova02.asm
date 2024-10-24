@@ -15,16 +15,16 @@ include Ivanova02.inc  ; Include the external file with macros
     PasswordBuffer db 15 dup(?)
 
 .data
-    CorrectPass db "54321", 0
-    StudentSurname db "Іванова", 0
-    StudentName db "Дар'я", 0
-    StudentPatronymic db "Іванівна", 0
-    BirthDate db "Дата народження: 04.02.2005", 0
-    RecordBook db "Залікова книжка: 5147", 0
-    ErrorMsg db "Хибний пароль", 0
-    PromptMsg db "Введіть пароль:", 0
-    DialogTitle db "Персональні дані студента", 0
-    TitleInput db "Перевірка пароля", 0
+    CorrectPass db "54321", 0 
+    StudentName db "Іванова Дар'я Іванівна", 0 
+    ;Something db "Іванова Дар'я Іванівна", 0 
+    ;Something db "Іванова Дар'я Іванівна", 0 
+    BirthDate db "Дата народження: 04.02.2005", 0 
+    RecordBook db "Залікова книжка: 5147", 0 
+    ErrorMsg db "Хибний пароль", 0 
+    PromptMsg db "Введіть пароль:", 0 
+    DialogTitle db "Персональні дані студента", 0 
+    TitleInput db "Перевірка пароля", 0 
 
 dialogHandler PROTO :DWORD, :DWORD, :DWORD, :DWORD
 
@@ -48,15 +48,11 @@ checkOnEquality proc
 checkOnEquality endp
 
 DisplayStudentData proc
-    ShowMessage StudentSurname
-    invoke Sleep, 1000  ; Затримка на 1 секунду
-    ShowMessage StudentName
-    invoke Sleep, 1000  ; Затримка на 1 секунду
-    ShowMessage StudentPatronymic
-    invoke Sleep, 1000  ; Затримка на 1 секунду
-    ShowMessage BirthDate
-    invoke Sleep, 1000  ; Затримка на 1 секунду
-    ShowMessage RecordBook
+    ShowMessage StudentName 
+    ;ShowMessage something 
+    ;ShowMessage something 
+    ShowMessage BirthDate 
+    ShowMessage RecordBook 
     ret
 DisplayStudentData endp
 

@@ -15,9 +15,9 @@ includelib \masm32\lib\msvcrt.lib
 
 .data
     CorrectPass db "54321", 0
-    StudentSurname db "Іванова", 0
-    StudentName db "Дар'я", 0
-    StudentPatronymic db "Іванівна", 0
+    StudentName db "Іванова Дар'я Іванівна", 0
+    ;Something db "Іванова Дар'я Іванівна", 0
+    ;Something db "Іванова Дар'я Іванівна", 0
     BirthDate db "Дата народження: 04.02.2005", 0
     RecordBook db "Залікова книжка: 5147", 0
     ErrorMsg db "Хибний пароль", 0
@@ -78,6 +78,7 @@ main:
     DlgButton "Продовжити", WS_TABSTOP, 10,  40, 40,  10, IDOK  
     DlgButton "Вийти", WS_TABSTOP, 100, 40, 40,  10, IDCANCEL
 
+
     CallModalDialog 0, 0, dialogHandler, NULL
 
 checkOnEquality proc
@@ -88,9 +89,9 @@ checkOnEquality proc
 checkOnEquality endp
 
 DisplayStudentData proc
-    ShowMessage StudentSurname
     ShowMessage StudentName
-    ShowMessage StudentPatronymic
+    ;ShowMessage something
+    ;ShowMessage something
     ShowMessage BirthDate
     ShowMessage RecordBook
     ret
@@ -99,15 +100,19 @@ DisplayStudentData endp
 dialogHandler proc hWnd:DWORD, uMsg:DWORD, wParam:DWORD, lParam:DWORD
     .if uMsg == WM_INITDIALOG
         jmp createDialogWindow
+        
     .elseif uMsg == WM_CLOSE
         invoke ExitProcess, 0
+        
     .elseif uMsg == WM_COMMAND
         jmp handleOKorCancel
+        
     .endif
 
 createDialogWindow:
     invoke GetWindowLong, hWnd, GWL_USERDATA
     return 0
+
 
 handleOKorCancel:
     .if wParam == IDOK
@@ -117,6 +122,7 @@ handleOKorCancel:
         invoke ExitProcess, 0
     .endif
     return 0
+    
 dialogHandler endp
 
 end main
