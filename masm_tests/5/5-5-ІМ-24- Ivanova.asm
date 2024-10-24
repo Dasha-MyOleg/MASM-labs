@@ -10,8 +10,8 @@ include \masm32\include\masm32rt.inc
     CalculationFormula db "Формула=(a*b/4 - l) / (41 - b*a + c)", 0
 
     Values_A dd 12, 80, 20, -28, 4
-    Values_B dd 5, 17, -7, 10, -15
-    Values_C dd 6, 3, 27, -4, 1
+    Values_B dd 0, 17, -7, 10, -15
+    Values_C dd -41, 3, 27, -4, 1
     Values_L dd 2432, 30000, 70809, 1, 140
 
     EvenNumberMessage db "Формула=%s", 13, 10,
@@ -71,43 +71,43 @@ xor esi, esi
     mov bufferC, ecx
     mov bufferL, edx
 
-    ; Compute the denominator: 41 - b*a + c
+    ; Обчислити знаменник: 41 - b*a + c
     mov edi, 41
     imul ebx, eax ; b*a
     sub edi, ebx  ; 41 - b*a
     add edi, ecx  ; + c
 
-    ; Check if the denominator is zero
+    ; Перевірити, чи знаменник дорівнює нулю
     .if edi == 0
         invoke wsprintf, addr buffer, addr ZeroNumberMessage, addr CalculationFormula, bufferA, \
         bufferB, bufferC, bufferL
         invoke MessageBox, 0, addr buffer, addr ErrorMessage, 0
-        invoke ExitProcess, 0
+        .continue  ; Продовжити до наступної ітерації
     .endif
 
-    ; Compute the numerator: (a*b/4 - l)
+    ; Обчислити чисельник: (a*b/4 - l)
     mov eax, bufferA ; a
     imul eax, bufferB ; a*b
     cdq
     idiv DivisorValue ; a*b / 4
     sub eax, bufferL ; a*b/4 - l
 
-    ; Divide numerator by denominator
-    mov ecx, edi ; Denominator
+    ; Поділити чисельник на знаменник
+    mov ecx, edi ; Знаменник
     cdq
     idiv ecx ; (a*b/4 - l) / (41 - b*a + c)
 
-    ; Save result
+    ; Зберегти результат
     mov result, eax
 
-    ; Check if result is even or odd
+    ; Перевірити, чи результат парний або непарний
     xor edx, edx
     mov ebx, 2
     mov eax, result
     div ebx
 
     .if edx != 0
-        ; Result is odd, multiply by 5
+        ; Результат непарний, помножити на 5
         mov eax, result
         imul eax, 5
         invoke wsprintf, addr buffer, addr OddNumberMessage, addr CalculationFormula, bufferA, \
@@ -116,7 +116,7 @@ xor esi, esi
         .continue
     .endif
 
-    ; Result is even, divide by 2
+    ; Результат парний, поділити на 2
     mov eax, result
     cdq
     idiv ebx
