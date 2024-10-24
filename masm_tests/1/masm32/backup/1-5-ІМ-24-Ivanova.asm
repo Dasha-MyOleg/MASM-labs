@@ -2,11 +2,11 @@
 .model flat, stdcall
 option casemap:none
 
-include \masm32\include\windows.inc
-include \masm32\include\user32.inc
-include \masm32\include\kernel32.inc
-includelib \masm32\lib\user32.lib
-includelib \masm32\lib\kernel32.lib
+include C:\masm32\include\windows.inc
+include C:\masm32\include\user32.inc
+include C:\masm32\include\kernel32.inc
+includelib C:\masm32\lib\user32.lib
+includelib C:\masm32\lib\kernel32.lib
 
 .data
     message db "ПІБ: Іванова Дар'я Івнівна", 0Ah, "Дата народження: 04.02.2005", 0Ah, "Залікова книжка: 125635", 0Ah, "Улюблена тварина: щур", 0
@@ -17,4 +17,3 @@ start:
     invoke MessageBoxA, NULL, addr message, addr caption, MB_OK
     invoke ExitProcess, 0
 end start
-
