@@ -2,24 +2,26 @@
 .model flat, stdcall
 option casemap:none
 
-include C:\masm32\include\windows.inc
-include C:\masm32\include\user32.inc
-include C:\masm32\include\kernel32.inc
+include \masm32\include\windows.inc
+include \masm32\include\user32.inc
+include \masm32\include\kernel32.inc
 include \masm32\include\masm32rt.inc
-includelib C:\masm32\lib\user32.lib
-includelib C:\masm32\lib\kernel32.lib
+includelib \masm32\lib\user32.lib
+includelib \masm32\lib\kernel32.lib
 includelib \masm32\lib\msvcrt.lib
 
 .data?
-    PasswordBuffer db 15 dup (?)
+    PasswordBuffer db 15 dup (?)     ; Буфер для введеного користувачем пароля
 
 .data
-    CorrectPass db "54321", 0
+    ; "54321" зашифрований вручну за допомогою XOR 5Ah
+    InitialEncryptedPass db 6Fh, 6Eh, 69h, 68h, 6Bh ;фрований пароль для "54321"
     StudentDetails db "Іванова Дар'я Іванівна", 13, 10, "Дата народження: 04.02.2005", 13, 10, "Залікова книжка: 5147", 0
     ErrorMsg db "Хибний пароль", 0
     PromptMsg db "Введіть пароль:", 0
     DialogTitle db "Персональні дані студента", 0
     TitleInput db "Перевірка пароля", 0
+    XorKey db 5Ah  ; Ключ для XOR
 
 dialogHandler PROTO :DWORD, :DWORD, :DWORD, :DWORD
 
@@ -36,53 +38,39 @@ main:
     CallModalDialog 0, 0, dialogHandler, NULL
 
 encryptXOR proc
-    ; Шифруємо CorrectPass за допомогою XOR
-    mov esi, offset CorrectPass
-    mov ecx, 5  ; Довжина пароля
-    xorLoopCorrectPass:
-        mov al, byte ptr [esi]
-        xor al, 5Ah  ; Застосовуємо XOR з ключем 0x5A
-        mov byte ptr [esi], al
-        inc esi
-        loop xorLoopCorrectPass
-
     ; Шифруємо введений користувачем пароль PasswordBuffer
     mov edi, offset PasswordBuffer
     mov ecx, 5  ; Довжина пароля
     xorLoopPassword:
         mov al, byte ptr [edi]
-        xor al, 5Ah  ; Застосовуємо XOR з ключем 0x5A
+        xor al, XorKey  ; Застосовуємо XOR з ключем
         mov byte ptr [edi], al
         inc edi
         loop xorLoopPassword
-
-    return 0
+    ret
 encryptXOR endp
 
 checkOnEquality proc
-    nop  
-    invoke encryptXOR  ; Шифруємо паролі перед порівнянням
-    mov esi, offset CorrectPass
+    ; Шифруємо введений пароль
+    invoke encryptXOR
+
+    ; Діагностичне повідомлення для перевірки зашифрованого введеного пароля
+    invoke MessageBoxA, NULL, addr PasswordBuffer, addr TitleInput, MB_OK
+
+    ; Порівняння зашифрованого введеного пароля з InitialEncryptedPass
+    mov esi, offset InitialEncryptedPass
     mov edi, offset PasswordBuffer
+    mov ecx, 5
+    repe cmpsb
+    jne incorrectPassword
 
-    cmpLoop:
-        mov al, byte ptr [edi]
-        mov bl, byte ptr [esi]  
+correctPassword:
+    invoke MessageBoxA, NULL, addr StudentDetails, addr DialogTitle, MB_OK
+    invoke ExitProcess, 0
 
-        .if al != bl
-            invoke MessageBoxA, NULL, addr ErrorMsg, addr DialogTitle, MB_OK
-            invoke ExitProcess, 0 
-        .endif
-
-        .if al == 0      
-            invoke MessageBoxA, NULL, addr StudentDetails, addr DialogTitle, MB_OK
-            invoke ExitProcess, 0
-        .endif
-
-        inc esi
-        inc edi
-        jmp cmpLoop
-    return 0
+incorrectPassword:
+    invoke MessageBoxA, NULL, addr ErrorMsg, addr DialogTitle, MB_OK
+    invoke ExitProcess, 0
 checkOnEquality endp
 
 dialogHandler proc hWnd:DWORD, uMsg:DWORD, wParam:DWORD, lParam:DWORD
@@ -109,6 +97,10 @@ handleOKorCancel:
         invoke ExitProcess, 0
     .endif
     return 0
+
 dialogHandler endp
 
 end main
+
+
+

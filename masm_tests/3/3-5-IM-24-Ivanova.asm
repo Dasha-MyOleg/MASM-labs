@@ -2,19 +2,19 @@
 .model flat, stdcall
 option casemap:none
 
-include C:\masm32\include\windows.inc
-include C:\masm32\include\user32.inc
-include C:\masm32\include\kernel32.inc
+include \masm32\include\windows.inc
+include \masm32\include\user32.inc
+include \masm32\include\kernel32.inc
 include \masm32\include\masm32rt.inc
-includelib C:\masm32\lib\user32.lib
-includelib C:\masm32\lib\kernel32.lib
+includelib \masm32\lib\user32.lib
+includelib \masm32\lib\kernel32.lib
 includelib \masm32\lib\msvcrt.lib
 
 .data?
     PasswordBuffer db 15 dup (?)
 
 .data
-    CorrectPass db "54321", 0
+    CorrectPass db "passIMP", 0
     StudentDetails db "Іванова Дар'я Іванівна", 13, 10, "Дата народження: 04.02.2005", 13, 10, "Залікова книжка: 5147", 0
     ErrorMsg db "Хибний пароль", 0
     PromptMsg db "Введіть пароль:", 0
