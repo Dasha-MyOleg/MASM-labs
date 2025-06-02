@@ -2,34 +2,37 @@
 .model flat, stdcall
 option casemap:none
 
-include C:\masm32\include\windows.inc
-include C:\masm32\include\user32.inc
-include C:\masm32\include\kernel32.inc
-include \masm32\include\masm32rt.inc
-includelib C:\masm32\lib\user32.lib
-includelib C:\masm32\lib\kernel32.lib
-includelib \masm32\lib\msvcrt.lib
-include Ivanova02.inc  ; Include the external file with macros
+; Підключення зовнішніх бібліотек та інклюдів
+include \masm32\include\windows.inc    ; Файл з основними Windows API функціями
+include \masm32\include\user32.inc     ; Функції для роботи з графічним інтерфейсом
+include \masm32\include\kernel32.inc   ; Функції для базових операцій ОС
+include \masm32\include\masm32rt.inc   ; Базові функції MASM32
+
+includelib \masm32\lib\user32.lib      ; Бібліотека для графічного інтерфейсу
+includelib \masm32\lib\kernel32.lib    ; Бібліотека для системних викликів
+includelib \masm32\lib\msvcrt.lib      ; Бібліотека C runtime
+
+include Ivanova02.inc                     ; Підключення файлу з макросами
 
 .data?
-    PasswordBuffer db 15 dup(?)
+    PasswordBuffer db 15 dup (?)         ; Введений користувачем пароль
 
 .data
-    CorrectPass db "54321", 0 
-    StudentName db "Іванова Дар'я Іванівна", 0 
-    ;Something db "Іванова Дар'я Іванівна", 0 
-    ;Something db "Іванова Дар'я Іванівна", 0 
-    BirthDate db "Дата народження: 04.02.2005", 0 
-    RecordBook db "Залікова книжка: 5147", 0 
-    ErrorMsg db "Хибний пароль", 0 
-    PromptMsg db "Введіть пароль:", 0 
-    DialogTitle db "Персональні дані студента", 0 
-    TitleInput db "Перевірка пароля", 0 
+    InitialEncryptedPass db 5Ah, 78h, 09h, 2Fh, 4Ah
+    StudentName db "Іванова Дар'я Іванівна", 0
+    BirthDate db "Дата народження: 04.02.2005", 0
+    RecordBook db "Залікова книжка: 5147", 0
+    ErrorMsg db "Хибний пароль", 0
+    SuccessMsg db "Пароль вірний", 0
+    PromptMsg db "Введіть пароль:", 0
+    DialogTitle db "Персональні дані студента", 0
+    XorKey db 6Fh, 4Ch, 3Ah, 1Dh, 7Bh  ; Ключ для XOR
 
 dialogHandler PROTO :DWORD, :DWORD, :DWORD, :DWORD
 
 .code
 main:
+    ; Налаштування діалогового вікна
     Dialog "Персональні дані студента", "Times New Roman", 15, \
         WS_OVERLAPPED or WS_SYSMENU or DS_CENTER, \
         4, 10, 10, 150, 70, 1024  
@@ -40,29 +43,36 @@ main:
 
     CallModalDialog 0, 0, dialogHandler, NULL
 
-checkOnEquality proc
-    EncryptXOR CorrectPass
-    EncryptXOR PasswordBuffer
-    ComparePasswords CorrectPass, PasswordBuffer
-    return 0
-checkOnEquality endp
+checkOnEquality proc hWnd:DWORD
+    ; Отримання введеного пароля
+    invoke GetDlgItemText, hWnd, 5089, addr PasswordBuffer, 15
+    ; Шифрування введеного пароля
+    EncryptPassword offset PasswordBuffer             
 
-DisplayStudentData proc
-    ShowMessage StudentName 
-    ;ShowMessage something 
-    ;ShowMessage something 
-    ShowMessage BirthDate 
-    ShowMessage RecordBook 
-    ret
-DisplayStudentData endp
+    ; Порівняння зашифрованого пароля з очікуваним значенням
+    CompareEncryptedPassword offset PasswordBuffer, offset InitialEncryptedPass 
+
+PasswordCorrect:
+    ShowMessage offset StudentName, offset DialogTitle
+    ShowMessage offset BirthDate, offset DialogTitle
+    ShowMessage offset RecordBook, offset DialogTitle
+    invoke ExitProcess, 0
+
+PasswordIncorrect:
+    ShowMessage offset ErrorMsg, offset DialogTitle
+    invoke ExitProcess, 0
+checkOnEquality endp
 
 dialogHandler proc hWnd:DWORD, uMsg:DWORD, wParam:DWORD, lParam:DWORD
     .if uMsg == WM_INITDIALOG
         jmp createDialogWindow
+
     .elseif uMsg == WM_CLOSE
         invoke ExitProcess, 0
+
     .elseif uMsg == WM_COMMAND
         jmp handleOKorCancel
+
     .endif
 
 createDialogWindow:
@@ -71,12 +81,12 @@ createDialogWindow:
 
 handleOKorCancel:
     .if wParam == IDOK
-        invoke GetDlgItemText, hWnd, 5089, addr PasswordBuffer, 15
-        invoke checkOnEquality
+        invoke checkOnEquality, hWnd
     .elseif wParam == IDCANCEL
         invoke ExitProcess, 0
     .endif
     return 0
+
 dialogHandler endp
 
 end main

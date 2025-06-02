@@ -1,54 +1,38 @@
-; Ivanova02.inc - файл з макросами
+;; Ivanova02.inc
 
-; Макрос для виведення тексту у MessageBox
-ShowMessage macro text
-    invoke MessageBoxA, NULL, addr text, addr DialogTitle, MB_OK
-endm
+; Макрос для шифрування введеного пароля
+EncryptPassword macro passwordPtr
+    local xorLoop
 
-; Макрос для шифрування пароля за допомогою XOR з ключем 0x5A
-EncryptXOR macro password
-    local loopStart
-    mov esi, offset password
-    mov ecx, 5  ; Довжина пароля
-    
-    loopStart:
-        mov al, byte ptr [esi]
-        xor al, 5Ah
-        mov byte ptr [esi], al
-        inc esi
-        loop loopStart
-endm
+    mov edi, passwordPtr          ;; Вказівник на буфер пароля
+    mov ecx, 5                    ;; Довжина пароля в байтах
+    lea esi, XorKey
 
-; Макрос для порівняння зашифрованого пароля з оригіналом
-ComparePasswords macro original, entered
-    local cmpLoop, exitSuccess, exitFailure
-    
-    mov esi, offset original
-    mov edi, offset entered
-
-    cmpLoop:
-        mov al, byte ptr [edi]
-        mov bl, byte ptr [esi]
-
-        .if al != bl
-            ShowMessage ErrorMsg
-            jmp exitFailure
-        .endif
-
-        .if al == 0
-            jmp exitSuccess
-        .endif
-
-        inc esi
+    xorLoop:
+        mov bl, byte ptr [edi]          ;; Завантаження символу пароля
+        xor bl, byte ptr [esi]          ;; XOR з відповідним байтом ключа
+        mov byte ptr [edi], bl          ;; Збереження зашифрованого символу
         inc edi
-        jmp cmpLoop
+        inc esi
+        loop xorLoop
+endm
 
-    exitSuccess:
-        call DisplayStudentData
-        jmp done
+; Макрос для точного побайтного порівняння
+CompareEncryptedPassword macro inputPtr, originalHashPtr
+    local notEqual
+    mov esi, inputPtr
+    mov edi, originalHashPtr
+    mov ecx, 5                           ;; Кількість символів пароля для порівняння
 
-    exitFailure:
-        invoke ExitProcess, 0
+    repe cmpsb                           ;; Порівняння байтів один за одним
+    jne notEqual                         ;; Якщо є різниця — не збігаються
+    jmp PasswordCorrect                  ;; Якщо паролі збігаються, виконується ця секція
 
-    done:
+notEqual:
+    jmp PasswordIncorrect                ;; Якщо паролі не збігаються
+endm
+
+; Макрос для виведення тексту з використанням MessageBox
+ShowMessage macro text, title
+    invoke MessageBoxA, NULL, text, title, MB_OK
 endm

@@ -2,74 +2,74 @@
 .model flat, stdcall
 option casemap:none
 
-include C:\masm32\include\windows.inc
-include C:\masm32\include\user32.inc
-include C:\masm32\include\kernel32.inc
-include \masm32\include\masm32rt.inc
-includelib C:\masm32\lib\user32.lib
-includelib C:\masm32\lib\kernel32.lib
-includelib \masm32\lib\msvcrt.lib
+; Підключення зовнішніх бібліотек та інклюдів
+include \masm32\include\windows.inc    ; Файл з основними Windows API функціями
+include \masm32\include\user32.inc     ; Функції для роботи з графічним інтерфейсом
+include \masm32\include\kernel32.inc   ; Функції для базових операцій ОС
+include \masm32\include\masm32rt.inc   ; Базові функції MASM32
+
+includelib \masm32\lib\user32.lib      ; Бібліотека для графічного інтерфейсу
+includelib \masm32\lib\kernel32.lib    ; Бібліотека для системних викликів
+includelib \masm32\lib\msvcrt.lib      ; Бібліотека C runtime
 
 .data?
-    PasswordBuffer db 15 dup(?)
+    PasswordBuffer db 15 dup (?)         ; Введений користувачем пароль
 
 .data
-    CorrectPass db "54321", 0
+    ; Зашифрований пароль "54321" із ключем XOR
+    InitialEncryptedPass db 5Ah, 78h, 09h, 2Fh, 4Ah
     StudentName db "Іванова Дар'я Іванівна", 0
-    ;Something db "Іванова Дар'я Іванівна", 0
-    ;Something db "Іванова Дар'я Іванівна", 0
     BirthDate db "Дата народження: 04.02.2005", 0
     RecordBook db "Залікова книжка: 5147", 0
     ErrorMsg db "Хибний пароль", 0
+    SuccessMsg db "Пароль вірний", 0
     PromptMsg db "Введіть пароль:", 0
     DialogTitle db "Персональні дані студента", 0
-    TitleInput db "Перевірка пароля", 0
+    XorKey db 6Fh, 4Ch, 3Ah, 1Dh, 7Bh  ; Ключ для XOR
+    HexMessage db "Зашифрований пароль: %02X %02X %02X %02X %02X", 0
+    BufferForHex db 50 dup (?)          ; Буфер для форматування шістнадцяткових значень
 
 dialogHandler PROTO :DWORD, :DWORD, :DWORD, :DWORD
 
-ShowMessage macro text
-    invoke MessageBoxA, NULL, addr text, addr DialogTitle, MB_OK
-endm
+; Макрос для шифрування введеного паролю
+EncryptPassword macro passwordPtr
+    local xorLoop
 
-EncryptXOR macro password
-    local loopStart
-    mov esi, offset password
-    mov ecx, 5
-    loopStart:
-        mov al, byte ptr [esi]
-        xor al, 5Ah
-        mov byte ptr [esi], al
-        inc esi
-        loop loopStart
-endm
+    mov edi, passwordPtr          ;; Вказівник на буфер пароля
+    mov ecx, 5                    ;; Довжина пароля в байтах
+    lea esi, XorKey
 
-ComparePasswords macro original, entered
-    local cmpLoop, exitSuccess, exitFailure
-    mov esi, offset original
-    mov edi, offset entered
-    cmpLoop:
-        mov al, byte ptr [edi]
-        mov bl, byte ptr [esi]
-        .if al != bl
-            ShowMessage ErrorMsg
-            jmp exitFailure
-        .endif
-        .if al == 0
-            jmp exitSuccess
-        .endif
-        inc esi
+    xorLoop:
+        mov bl, byte ptr [edi]          ;; Завантаження символу пароля
+        xor bl, byte ptr [esi]          ;; XOR з відповідним байтом ключа
+        mov byte ptr [edi], bl          ;; Збереження зашифрованого символу
         inc edi
-        jmp cmpLoop
-    exitSuccess:
-        call DisplayStudentData
-        jmp done
-    exitFailure:
-        invoke ExitProcess, 0
-    done:
+        inc esi
+        loop xorLoop
+endm
+
+; Макрос для точного побайтного порівняння
+CompareEncryptedPassword macro inputPtr, originalHashPtr
+    local notEqual
+    mov esi, inputPtr
+    mov edi, originalHashPtr
+    mov ecx, 5                           ;; Кількість символів пароля для порівняння
+
+    repe cmpsb                           ;; Порівняння байтів один за одним
+    jne notEqual                         ;; Якщо є різниця — не збігаються
+    jmp PasswordCorrect                  ;; Якщо паролі збігаються, виконується ця секція
+
+notEqual:
+    jmp PasswordIncorrect                ;; Якщо паролі не збігаються
+endm
+
+ShowMessage macro text, title
+    invoke MessageBoxA, NULL, text, title, MB_OK
 endm
 
 .code
 main:
+    ; Налаштування діалогового вікна
     Dialog "Персональні дані студента", "Times New Roman", 15, \
         WS_OVERLAPPED or WS_SYSMENU or DS_CENTER, \
         4, 10, 10, 150, 70, 1024  
@@ -78,51 +78,63 @@ main:
     DlgButton "Продовжити", WS_TABSTOP, 10,  40, 40,  10, IDOK  
     DlgButton "Вийти", WS_TABSTOP, 100, 40, 40,  10, IDCANCEL
 
-
     CallModalDialog 0, 0, dialogHandler, NULL
 
-checkOnEquality proc
-    EncryptXOR CorrectPass
-    EncryptXOR PasswordBuffer
-    ComparePasswords CorrectPass, PasswordBuffer
-    return 0
-checkOnEquality endp
+checkOnEquality proc hWnd:DWORD
+    ; Отримання введеного пароля
+    invoke GetDlgItemText, hWnd, 5089, addr PasswordBuffer, 15
+    ; Шифрування введеного пароля
+    EncryptPassword offset PasswordBuffer             
 
-DisplayStudentData proc
-    ShowMessage StudentName
-    ;ShowMessage something
-    ;ShowMessage something
-    ShowMessage BirthDate
-    ShowMessage RecordBook
-    ret
-DisplayStudentData endp
+    ;; Виведення зашифрованого пароля в шістнадцятковому форматі
+    ;;invoke wsprintf, addr BufferForHex, addr HexMessage, \
+    ;;    byte ptr PasswordBuffer[0], byte ptr PasswordBuffer[1], \
+    ;;    byte ptr PasswordBuffer[2], byte ptr PasswordBuffer[3], \
+    ;;    byte ptr PasswordBuffer[4]
+    ;;invoke MessageBoxA, NULL, addr BufferForHex, addr DialogTitle, MB_OK
+
+    ;; Діагностичне повідомлення після шифрування
+    ;;ShowMessage offset PasswordBuffer, offset DialogTitle
+
+    ; Порівняння зашифрованого пароля з очікуваним значенням
+    CompareEncryptedPassword offset PasswordBuffer, offset InitialEncryptedPass 
+
+PasswordCorrect:
+    ;;ShowMessage offset SuccessMsg, offset DialogTitle ; Повідомлення про успіх
+    ShowMessage offset StudentName, offset DialogTitle
+    ShowMessage offset BirthDate, offset DialogTitle
+    ShowMessage offset RecordBook, offset DialogTitle
+    invoke ExitProcess, 0
+
+PasswordIncorrect:
+    ShowMessage offset ErrorMsg, offset DialogTitle ;; Повідомлення про невірний пароль
+    invoke ExitProcess, 0                           ;; Завершення програми, якщо пароль невірний
+checkOnEquality endp
 
 dialogHandler proc hWnd:DWORD, uMsg:DWORD, wParam:DWORD, lParam:DWORD
     .if uMsg == WM_INITDIALOG
         jmp createDialogWindow
-        
+
     .elseif uMsg == WM_CLOSE
         invoke ExitProcess, 0
-        
+
     .elseif uMsg == WM_COMMAND
         jmp handleOKorCancel
-        
+
     .endif
 
 createDialogWindow:
     invoke GetWindowLong, hWnd, GWL_USERDATA
     return 0
 
-
 handleOKorCancel:
     .if wParam == IDOK
-        invoke GetDlgItemText, hWnd, 5089, addr PasswordBuffer, 15
-        invoke checkOnEquality
+        invoke checkOnEquality, hWnd ; Передаємо hWnd до процедури
     .elseif wParam == IDCANCEL
         invoke ExitProcess, 0
     .endif
     return 0
-    
+
 dialogHandler endp
 
 end main
